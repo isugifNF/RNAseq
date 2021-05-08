@@ -1,0 +1,14 @@
+name: rnaseq_env
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python=3.8
+  - fastqc
+  - multiqc
+  - parallel
+  - kallisto
+  - salmon
+  - gmap
+
