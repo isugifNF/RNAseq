@@ -7,6 +7,42 @@
 
 nextflow.enable.dsl=2
 
+def helpMsg() {
+  log.info """
+   Usage:
+   The typical command for running the RNAseq pipeline is as follows:
+   nextflow run main.nf --reads "*_{R1,R2}.fastq.gz" --genome GENOME.fasta --genome_gff GENOME.gff --genome_cdna CDNA.fasta  -profile singularity
+
+   Mandatory arguments:
+    --reads                 Paired-end reads in fastq.gz format, will need to specify glob (e.g. "*_{R1,R2}.fastq.gz")
+    --genome                Reference genome fasta file
+    --genome_gff            Reference gff file
+    --genome_cdna           Reference cdna file
+
+   Optional configuration arguments:
+    -profile                Configuration profile to use. Can use multiple (comma separated)
+                            Available: local, slurm [default:local]
+    --fastqc_app            Link to fastqc executable [default: 'fastqc']
+    --multiqc_app           Link to multiqc executable [default: 'multiqc']
+    --parallel_app          Link to parallel executable [default: 'parallel']
+    --kallisto_app          Link to kallisto executable [default: 'kallisto']
+    --salmon_app            Link to salmon executable [default: 'salmon']
+    --gsnap_app             Link to gsnap executable [default: 'gsnap']
+    --featureCounts_app     Link to featureCounts executable [default: 'featureCounts']
+
+   Optional other arguments:
+    --threads               Threads per process [default:4 for local, 16 for slurm]
+    --queueSize             Maximum jobs to submit to slurm [default:20]
+    --account               HPC account name for slurm sbatch, atlas and ceres requires this
+    --help
+"""
+}
+
+if(params.help){
+  helpMsg()
+  exit 0
+}
+
 // === Define Processes
 
 process fastqc {
