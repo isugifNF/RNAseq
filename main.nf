@@ -7,21 +7,14 @@
 
 nextflow.enable.dsl=2
 
-params.reads="00_Raw-Data/*{1,2}.fastq.gz"
-params.genome="02_Genome/GCF_902167145.1_Zm-B73-REFERENCE-NAM-5.0_genomic.fna.gz"
-params.genome_gff="02_Genome/GCF_902167145.1_Zm-B73-REFERENCE-NAM-5.0_genomic.gff.gz"
-params.genome_cdna="02_Genome/Arabidopsis_thaliana.TAIR10.cdna.all.fa.gz"
-
-params.outdir="results"
-
 // === Define Processes
 
 process fastqc {
     tag "batched"
     label 'fastqc'
-    executor 'slurm'
-    clusterOptions '-N 1 -n 16 -t 02:00:00 --account=isu_gif_vrsc'
-    module 'fastqc:parallel'
+//    executor 'slurm'
+//    clusterOptions '-N 1 -n 16 -t 02:00:00 --account=isu_gif_vrsc'
+//    module 'fastqc:parallel'
 
     publishDir "${params.outdir}/01_Quality-Control", mode: 'copy',
         saveAs: { filename -> filename.indexOf(".zip") > 0 ? "zips/$filename" : "$filename" }
@@ -35,14 +28,14 @@ process fastqc {
     script:
     """
     #! /usr/bin/env bash
-    parallel -j8 "fastqc {1}" ::: $read
+    $parallel_app -j8 "$fastqc_app {1}" ::: $read
     """
 }
 
 process multiqc {
     label 'multiqc'
-    executor 'slurm'
-    clusterOptions '-N 1 -n 16 -t 02:00:00 --account=isu_gif_vrsc'
+//    executor 'slurm'
+//    clusterOptions '-N 1 -n 16 -t 02:00:00 --account=isu_gif_vrsc'
 
     publishDir "${params.outdir}/01_Quality-Control", mode: 'copy',
         saveAs: { filename -> filename.indexOf(".zip") > 0 ? "zips/$filename" : "$filename" }
@@ -56,15 +49,15 @@ process multiqc {
     script:
     """
     #! /usr/bin/env bash
-    multiqc .
+    $multiqc_app .
     """
 }
 
 process kallisto_index {
     tag "$genome_cdna"
     label 'kallisto'
-    executor 'slurm'
-    clusterOptions '-N 1 -n 16 -t 02:00:00 --account=isu_gif_vrsc'
+//    executor 'slurm'
+//    clusterOptions '-N 1 -n 16 -t 02:00:00 --account=isu_gif_vrsc'
 
     publishDir "${params.outdir}/03_Kallisto", mode: 'copy'
 
@@ -77,7 +70,7 @@ process kallisto_index {
     script:
     """
     #! /usr/bin/env bash
-    kallisto index \
+    $kallisto_app index \
       -i ${genome_cdna.simpleName}.idx ${genome_cdna}
     """
 }
@@ -85,8 +78,8 @@ process kallisto_index {
 process kallisto_quant {
     tag "${readname}"
     label 'kallisto'
-    executor 'slurm'
-    clusterOptions '-N 1 -n 16 -t 02:00:00 --account=isu_gif_vrsc'
+//    executor 'slurm'
+//    clusterOptions '-N 1 -n 16 -t 02:00:00 --account=isu_gif_vrsc'
 
     publishDir "${params.outdir}/03_Kallisto", mode: 'copy'
 
@@ -99,7 +92,7 @@ process kallisto_quant {
     script:
     """
     #! /usr/bin/env bash
-    kallisto quant \
+    $kallisto_app quant \
      -i ${genome_index} \
      -o ${readname}_quant \
      -b 20 -t 16 \
@@ -110,8 +103,8 @@ process kallisto_quant {
 process salmon_index {
     tag "$genome_cdna"
     label 'salmon'
-    executor 'slurm'
-    clusterOptions '-N 1 -n 16 -t 02:00:00 --account=isu_gif_vrsc'
+//    executor 'slurm'
+//    clusterOptions '-N 1 -n 16 -t 02:00:00 --account=isu_gif_vrsc'
 
     publishDir "${params.outdir}/03_Salmon", mode: 'copy'
 
@@ -124,7 +117,7 @@ process salmon_index {
     script:
     """
     #! /usr/bin/env bash
-    salmon index \
+    $salmon_app index \
       -i ${genome_cdna.simpleName} \
       -t ${genome_cdna}
     """
@@ -133,8 +126,8 @@ process salmon_index {
 process salmon_quant {
     tag "${readname}"
     label 'salmon'
-    executor 'slurm'
-    clusterOptions '-N 1 -n 16 -t 04:00:00 --account=isu_gif_vrsc'
+//    executor 'slurm'
+//    clusterOptions '-N 1 -n 16 -t 04:00:00 --account=isu_gif_vrsc'
 
     publishDir "${params.outdir}/03_Salmon", mode: 'copy'
 
@@ -147,7 +140,7 @@ process salmon_quant {
     script:
     """
     #! /usr/bin/env bash
-    salmon quant \
+    $salmon_app quant \
      -l A -p 16 \
      --validateMappings \
      -i ${genome_index} \
@@ -160,8 +153,8 @@ process salmon_quant {
 process gsnap_index {
     tag "${genome_gz.simpleName}"
     label 'gsnap'
-    executor 'slurm'
-    clusterOptions '-N 1 -n 16 -t 02:00:00 --account=isu_gif_vrsc'
+//    executor 'slurm'
+//    clusterOptions '-N 1 -n 16 -t 02:00:00 --account=isu_gif_vrsc'
 
     publishDir "${params.outdir}/03_GSNAP", mode: 'copy'
 
@@ -185,8 +178,8 @@ process gsnap_index {
 process gsnap_align {
     tag "${readname}"
     label 'gsnap'
-    executor 'slurm'
-    clusterOptions '-N 1 -n 16 -t 04:00:00 --account=isu_gif_vrsc'
+//    executor 'slurm'
+//    clusterOptions '-N 1 -n 16 -t 04:00:00 --account=isu_gif_vrsc'
 
     publishDir "${params.outdir}/03_GSNAP", mode: 'copy'
 
@@ -199,7 +192,7 @@ process gsnap_align {
     script:
     """
     #! /usr/bin/env bash
-    gsnap \
+    $gsnap_app \
      --gunzip \
      -d ${genome_name} \
      -D gmapdb/ \
@@ -215,8 +208,8 @@ process gsnap_align {
 process featureCounts_gene {
     tag "${read_bam.simpleName}"
     label 'gsnap'
-    executor 'slurm'
-    clusterOptions '-N 1 -n 16 -t 04:00:00 --account=isu_gif_vrsc'
+//    executor 'slurm'
+//    clusterOptions '-N 1 -n 16 -t 04:00:00 --account=isu_gif_vrsc'
 
     publishDir "${params.outdir}/03_GSNAP", mode: 'copy'
 
@@ -229,7 +222,7 @@ process featureCounts_gene {
     script:
     """
     #! /usr/bin/env bash
-    featureCounts \
+    $featureCounts_app \
       -T 16 \
       -t gene \
       -g ID \
@@ -242,8 +235,8 @@ process featureCounts_gene {
 process featureCounts_mRNA {
     tag "${read_bam.simpleName}"
     label 'gsnap'
-    executor 'slurm'
-    clusterOptions '-N 1 -n 16 -t 04:00:00 --account=isu_gif_vrsc'
+//    executor 'slurm'
+//    clusterOptions '-N 1 -n 16 -t 04:00:00 --account=isu_gif_vrsc'
 
     publishDir "${params.outdir}/03_GSNAP", mode: 'copy'
 
@@ -256,7 +249,7 @@ process featureCounts_mRNA {
     script:
     """
     #! /usr/bin/env bash
-    featureCounts \
+    $featureCounts_app \
       -T 16 \
       -t mRNA \
       -g ID \
@@ -269,8 +262,8 @@ process featureCounts_mRNA {
 process featureCounts_geneMult {
     tag "${read_bam.simpleName}"
     label 'gsnap'
-    executor 'slurm'
-    clusterOptions '-N 1 -n 16 -t 04:00:00  --account=isu_gif_vrsc'
+//    executor 'slurm'
+//    clusterOptions '-N 1 -n 16 -t 04:00:00  --account=isu_gif_vrsc'
 
     publishDir "${params.outdir}/03_GSNAP", mode: 'copy'
 
@@ -283,7 +276,7 @@ process featureCounts_geneMult {
     script:
     """
     #! /usr/bin/env bash
-    featureCounts \
+    $featureCounts_app \
       -T 16 -M \
       -t gene \
       -g ID \

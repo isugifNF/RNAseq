@@ -1,0 +1,45 @@
+#! /usr/bin/env bash
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=4
+#SBATCH --time=24:00:00
+#SBATCH --job-name=NF_GATK
+#SBATCH --output=R-%x.%J.out
+#SBATCH --error=R-%x.%J.err
+# --mail-user=username@email.com
+# --mail-type=begin
+# --mail-type=end
+# --account=project_name    # <= put HPC account name here, required on Atlas
+
+#set -e
+#set -u
+
+# === Load Modules here
+# == Conda environment (replace with path to environment)
+source activate ~/miniconda3/envs/rnaseq_env
+
+# ==  Atlas HPC (will need a local install of nextflow)
+# module load singularity
+# NEXTFLOW=/project/isu_gif_vrsc/programs/nextflow
+
+# == Ceres HPC
+# module load nextflow
+# NEXTFLOW=nextflow
+
+# == Nova HPC
+module load gcc/7.3.0-xegsmw4 nextflow
+module load singularity
+NEXTFLOW=nextflow
+
+# === Set working directory and in/out variables
+cd ${SLURM_SUBMIT_DIR}
+
+# === Main Program
+${NEXTFLOW} run main.nf \
+  --reads "00_Raw-Data/*{1,2}.fastq.gz" \
+  --genome "02_Genome/*_genomic.fna.gz" \
+  --genome_gff "02_Genome/*.gff.gz" \
+  --genome_cdna "02_Genome/*.cdna.all.fa.gz" \
+  --queueSize 25 \
+  -profile slurm \
+  -resume
+  #--account isu_gif_vrsc       #<= add this to Atlas
