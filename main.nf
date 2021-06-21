@@ -20,6 +20,7 @@ def helpMsg() {
     --genome_cdna           Reference cdna file
 
    Optional configuration arguments:
+    --methods               Select one or more RNAseq counting methods [default: 'gsnap,hisat2,kallisto,salmon']
     -profile                Configuration profile to use. Can use multiple (comma separated)
                             Available: local, slurm [default:local]
     --fastqc_app            Link to fastqc executable [default: 'fastqc']
@@ -128,10 +129,11 @@ process kallisto_quant {
     script:
     """
     #! /usr/bin/env bash
+    PROC=\$((`nproc`))
     $kallisto_app quant \
      -i ${genome_index} \
      -o ${readname}_quant \
-     -b 20 -t 16 \
+     -b 20 -t \$PROC \
      ${read_pairs}
     """
 }
@@ -176,8 +178,9 @@ process salmon_quant {
     script:
     """
     #! /usr/bin/env bash
+    PROC=\$((`nproc`))
     $salmon_app quant \
-     -l A -p 16 \
+     -l A -p \$PROC \
      --validateMappings \
      -i ${genome_index} \
      -1 ${read_pairs.get(0)} \
@@ -228,16 +231,17 @@ process gsnap_align {
     script:
     """
     #! /usr/bin/env bash
+    PROC=\$((`nproc`-4))
     $gsnap_app \
      --gunzip \
      -d ${genome_name} \
      -D gmapdb/ \
-     -N 1 -t 16 -B 4 -m 5 \
+     -N 1 -t \$PROC -B 4 -m 5 \
      --input-buffer-size=1000000 \
      --output-buffer-size=1000000 \
      -A sam \
      ${read_pairs} |
-     samtools view --threads 16 -bS - > ${readname.simpleName}.bam
+     samtools view --threads 4 -bS - > ${readname.simpleName}.bam
     """
 }
 
@@ -250,7 +254,7 @@ process featureCounts_gene {
     publishDir "${params.outdir}/03_GSNAP", mode: 'copy'
 
     input:
-    tuple path(genome_gff), path(read_bam)
+    tuple path(read_bam), path(genome_gff)
 
     output:
     path("*")
@@ -258,8 +262,9 @@ process featureCounts_gene {
     script:
     """
     #! /usr/bin/env bash
+    PROC=\$((`nproc`))
     $featureCounts_app \
-      -T 16 \
+      -T \$PROC \
       -t gene \
       -g ID \
       -a ${genome_gff} \
@@ -277,7 +282,7 @@ process featureCounts_mRNA {
     publishDir "${params.outdir}/03_GSNAP", mode: 'copy'
 
     input:
-    tuple path(genome_gff), path(read_bam)
+    tuple path(read_bam), path(genome_gff)
 
     output:
     path("*")
@@ -285,8 +290,9 @@ process featureCounts_mRNA {
     script:
     """
     #! /usr/bin/env bash
+    PROC=\$((`nproc`))
     $featureCounts_app \
-      -T 16 \
+      -T \$PROC \
       -t mRNA \
       -g ID \
       -a ${genome_gff} \
@@ -304,7 +310,7 @@ process featureCounts_geneMult {
     publishDir "${params.outdir}/03_GSNAP", mode: 'copy'
 
     input:
-    tuple path(genome_gff), path(read_bam)
+    tuple path(read_bam), path(genome_gff)
 
     output:
     path("*")
@@ -312,8 +318,9 @@ process featureCounts_geneMult {
     script:
     """
     #! /usr/bin/env bash
+    PROC=\$((`nproc`))
     $featureCounts_app \
-      -T 16 -M \
+      -T \$PROC -M \
       -t gene \
       -g ID \
       -a ${genome_gff} \
@@ -336,12 +343,18 @@ workflow {
   readsflat_ch.collate(8) | fastqc | collect | multiqc
 
   /* 03_Kallisto */
-  cdna_ch | kallisto_index | combine(reads_ch) | kallisto_quant
+  if(params.methods =~ /kallisto/){
+    cdna_ch | kallisto_index | combine(reads_ch) | kallisto_quant
+  }
 
   /* 03_Salmon */
-  cdna_ch | salmon_index | combine(reads_ch) | salmon_quant
+  if(params.methods =~ /salmon/){
+    cdna_ch | salmon_index | combine(reads_ch) | salmon_quant
+  }
 
   /* 03_GSNAP */
-  genome_ch | gsnap_index | combine(reads_ch) | gsnap_align
-  gff_ch.combine(gsnap_align.out) | ( featureCounts_gene & featureCounts_mRNA & featureCounts_geneMult)
+  if(params.methods =~ /gsnap/){
+    genome_ch | gsnap_index | combine(reads_ch) | gsnap_align | combine(gff_ch) |
+      ( featureCounts_gene & featureCounts_mRNA & featureCounts_geneMult)
+  }
 }
