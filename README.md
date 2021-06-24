@@ -197,3 +197,53 @@ Succeeded   : 117
 ```
 
 </details>
+
+<details><summary>See example run on <b>Atlas HPC</b> - last updated 24 June 2021</summary>
+
+The below was wrapped in a slurm script, all dependencies did not have modules, so all installed via conda environment. Ran in 1 hour and 36 minutes.
+
+```
+# May need to install miniconda on Atlas (not sure why it's not there...)
+[[ -d envs/rnaseq_env ]] || conda env create -f environment.yml -p ${PWD}/envs/rnaseq_env
+source activate ${PWD}/envs/rnaseq_env
+
+# Nextflow needs to be installed
+[[ -f nextflow ]] || curl -s https://get.nextflow.io | bash
+
+./nextflow run main.nf \
+  --reads "00_Raw-Data/*{1,2}.fastq.gz" \
+  --genome "00_Raw-Data/02_Genome/*_genomic.fna.gz" \
+  --genome_gff "00_Raw-Data/02_Genome/*.gff.gz" \
+  --genome_cdna "00_Raw-Data/02_Genome/*rna.fna.gz" \
+  --queueSize 50 \
+  -profile slurm \
+  --account "isu_gif_vrsc" \
+  --threads 40 \
+  -resume
+
+```
+
+Progress messages
+
+```
+N E X T F L O W  ~  version 21.04.1
+Launching `main.nf` [nice_bartik] - revision: 7d9f51e73b
+executor >  slurm (117)
+[26/d0a530] process > fastqc (batched)               [100%] 5 of 5 ✔
+[7d/cc81d3] process > multiqc                        [100%] 1 of 1 ✔
+[83/3ff604] process > kallisto_index (GCF_9021671... [100%] 1 of 1 ✔
+[57/651fa9] process > kallisto_quant (SRR1573509)    [100%] 18 of 18 ✔
+[7e/6d4bc2] process > salmon_index (GCF_902167145... [100%] 1 of 1 ✔
+[db/348442] process > salmon_quant (SRR1573520)      [100%] 18 of 18 ✔
+[20/f31fda] process > gsnap_index (GCF_902167145)    [100%] 1 of 1 ✔
+[0b/fbe48e] process > gsnap_align (SRR1573520)       [100%] 18 of 18 ✔
+[4c/814675] process > featureCounts_gene (SRR1573... [100%] 18 of 18 ✔
+[2b/15418d] process > featureCounts_mRNA (SRR1573... [100%] 18 of 18 ✔
+[6f/327866] process > featureCounts_geneMult (SRR... [100%] 18 of 18 ✔
+Completed at: 24-Jun-2021 17:21:26
+Duration    : 1h 36m 34s
+CPU hours   : 16.6
+Succeeded   : 117
+```
+
+</details>
