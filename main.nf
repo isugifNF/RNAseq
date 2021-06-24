@@ -241,7 +241,7 @@ process gsnap_align {
      --output-buffer-size=1000000 \
      -A sam \
      ${read_pairs} |
-     samtools view --threads 4 -bS - > ${readname.simpleName}.bam
+     samtools view --threads 4 -bS - > ${readname}.bam
     """
 }
 
@@ -267,6 +267,7 @@ process featureCounts_gene {
       -T \$PROC \
       -t gene \
       -g ID \
+      -p \
       -a ${genome_gff} \
       -o ${read_bam.simpleName}_genecounts.txt \
       ${read_bam}
@@ -292,7 +293,7 @@ process featureCounts_mRNA {
     #! /usr/bin/env bash
     PROC=\$((`nproc`))
     $featureCounts_app \
-      -T \$PROC \
+      -T \$PROC -p \
       -t mRNA \
       -g ID \
       -a ${genome_gff} \
@@ -320,7 +321,7 @@ process featureCounts_geneMult {
     #! /usr/bin/env bash
     PROC=\$((`nproc`))
     $featureCounts_app \
-      -T \$PROC -M \
+      -T \$PROC -M -p \
       -t gene \
       -g ID \
       -a ${genome_gff} \

@@ -1,0 +1,315 @@
+<!doctype html>
+<!--
+  ~ Copyright 2013-2019, Centre for Genomic Regulation (CRG)
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<html>
+<head>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<script type="text/javascript">
+var prot = (("https:" == document.location.protocol) ? "https://" : "http://");
+document.write(unescape("%3Cscript src='" + prot + "code.jquery.com/jquery-latest.min.js' type='text/javascript' %3E%3C/script%3E"));
+document.write(unescape("%3Cscript src='" + prot + "d3js.org/d3.v3.min.js' charset='utf-8' type='text/javascript' %3E%3C/script%3E"));
+document.write(unescape("%3Cscript src='" + prot + "cdn.rawgit.com/nextflow-io/d3-timeline/82622c4cc35bac7283b3a317826b0709ac1ae476/src/d3-timeline.js' type='text/javascript' %3E%3C/script%3E"));
+</script>
+<style type="text/css">
+* {
+  font-family: 'Lato', 'Helvetica Neue', Arial, Helvetica, sans-serif;
+}
+
+.axis path,
+.axis line {
+fill: none;
+  stroke: black;
+  shape-rendering: crispEdges;
+}
+
+.axis text {
+  font-size: 10px;
+}
+
+div#timeline g text {
+  font-size: 13px;
+}
+
+text.timeline-label {
+  font-size: 13px;
+}
+
+#timeline2 .axis {
+  transform: translate(0px,30px);
+  -ms-transform: translate(0px,30px); /* IE 9 */
+  -webkit-transform: translate(0px,30px); /* Safari and Chrome */
+  -o-transform: translate(0px,30px); /* Opera */
+  -moz-transform: translate(0px,30px); /* Firefox */
+}
+
+.coloredDiv {
+  height:20px; width:20px; float:left;
+}
+
+#footer {
+  padding-top: 3em; color: #bfbfbf; font-size: 13px;
+}
+
+#footer a:visited {
+  color: #bfbfbf;
+  text-decoration: underline;
+}
+</style>
+<script type="text/javascript">
+var handler=null;
+// see https://github.com/mbostock/d3/wiki/Ordinal-Scales#category20c
+var colors = d3.scale.category20c().domain(d3.range(0,20)).range()
+
+function c0(index) { return "#9c9c9c"; }
+function c1(index) { return "#bdbdbd"; }
+function c2(index) { return colors[index % 16]; } // <-- note: uses only the first 16 colors
+
+var elapsed="1h 38m 48s"
+var beginningMillis=1624473572382;
+var endingMillis=1624487899681;
+var data=[
+{"label": "fastqc (batched)", "times": [{"starting_time": 1624473578348, "ending_time": 1624473580851, "color":c1(0)}, {"starting_time": 1624473580851, "ending_time": 1624473821928, "color":c0(0), "label": "4m 8s \/ 2 GB \/ CACHED"}, {"starting_time": 1624473821928, "ending_time": 1624473825852, "color":c1(0)}]},
+{"label": "fastqc (batched)", "times": [{"starting_time": 1624473576239, "ending_time": 1624473580844, "color":c1(0)}, {"starting_time": 1624473580844, "ending_time": 1624473949060, "color":c0(0), "label": "6m 15s \/ 2 GB \/ CACHED"}, {"starting_time": 1624473949060, "ending_time": 1624473950861, "color":c1(0)}]},
+{"label": "gsnap_index (GCF_902167145)", "times": [{"starting_time": 1624475374473, "ending_time": 1624475392862, "color":c1(1)}, {"starting_time": 1624475392862, "ending_time": 1624476196446, "color":c0(1), "label": "13m 48s \/ 3.9 GB \/ CACHED"}, {"starting_time": 1624476196446, "ending_time": 1624476202894, "color":c1(1)}]},
+{"label": "fastqc (batched)", "times": [{"starting_time": 1624473573269, "ending_time": 1624473575889, "color":c1(0)}, {"starting_time": 1624473575889, "ending_time": 1624473955284, "color":c0(0), "label": "6m 23s \/ 2 GB \/ CACHED"}, {"starting_time": 1624473955284, "ending_time": 1624473955861, "color":c1(0)}]},
+{"label": "fastqc (batched)", "times": [{"starting_time": 1624473575264, "ending_time": 1624473580838, "color":c1(0)}, {"starting_time": 1624473580838, "ending_time": 1624473945921, "color":c0(0), "label": "6m 11s \/ 2 GB \/ CACHED"}]},
+{"label": "salmon_index (GCF_902167145.1_Zm-B73-REFERENCE-NAM-5.0_rna.fna.gz)", "times": [{"starting_time": 1624473577434, "ending_time": 1624473585836, "color":c1(2)}, {"starting_time": 1624473585836, "ending_time": 1624473680094, "color":c0(2), "label": "1m 43s \/ 2.6 GB \/ CACHED"}, {"starting_time": 1624473680094, "ending_time": 1624473680844, "color":c1(2)}]},
+{"label": "kallisto_index (GCF_902167145.1_Zm-B73-REFERENCE-NAM-5.0_rna.fna.gz)", "times": [{"starting_time": 1624473572382, "ending_time": 1624473575840, "color":c1(3)}, {"starting_time": 1624473575840, "ending_time": 1624473708976, "color":c0(3), "label": "2m 18s \/ 4.7 GB \/ CACHED"}, {"starting_time": 1624473708976, "ending_time": 1624473710844, "color":c1(3)}]},
+{"label": "kallisto_quant (SRR1573506)", "times": [{"starting_time": 1624474231866, "ending_time": 1624474235871, "color":c1(4)}, {"starting_time": 1624474235871, "ending_time": 1624474394167, "color":c0(4), "label": "2m 49s \/ 4.5 GB \/ CACHED"}, {"starting_time": 1624474394167, "ending_time": 1624474400880, "color":c1(4)}]},
+{"label": "kallisto_quant (SRR1573520)", "times": [{"starting_time": 1624478110273, "ending_time": 1624478118930, "color":c1(4)}, {"starting_time": 1624478118930, "ending_time": 1624479191450, "color":c0(4), "label": "18m 4s \/ 15.4 GB \/ CACHED"}, {"starting_time": 1624479191450, "ending_time": 1624479194020, "color":c1(4)}]},
+{"label": "kallisto_quant (SRR1573512)", "times": [{"starting_time": 1624473953154, "ending_time": 1624473960860, "color":c1(4)}, {"starting_time": 1624473960860, "ending_time": 1624474048309, "color":c0(4), "label": "1m 38s \/ 4.5 GB \/ CACHED"}, {"starting_time": 1624474048309, "ending_time": 1624474050886, "color":c1(4)}]},
+{"label": "salmon_quant (SRR1573504)", "times": [{"starting_time": 1624473771780, "ending_time": 1624473775848, "color":c1(5)}, {"starting_time": 1624473775848, "ending_time": 1624474018918, "color":c0(5), "label": "4m 19s \/ 3 GB \/ CACHED"}, {"starting_time": 1624474018918, "ending_time": 1624474030863, "color":c1(5)}]},
+{"label": "kallisto_quant (SRR1573504)", "times": [{"starting_time": 1624475375423, "ending_time": 1624475392871, "color":c1(4)}, {"starting_time": 1624475392871, "ending_time": 1624475698801, "color":c0(4), "label": "5m 32s \/ 5 GB \/ CACHED"}, {"starting_time": 1624475698801, "ending_time": 1624475707869, "color":c1(4)}]},
+{"label": "salmon_quant (SRR1573506)", "times": [{"starting_time": 1624473682873, "ending_time": 1624473685848, "color":c1(5)}, {"starting_time": 1624473685848, "ending_time": 1624473815317, "color":c0(5), "label": "2m 23s \/ 2.7 GB \/ CACHED"}, {"starting_time": 1624473815317, "ending_time": 1624473825906, "color":c1(5)}]},
+{"label": "salmon_quant (SRR1573520)", "times": [{"starting_time": 1624473681874, "ending_time": 1624473685843, "color":c1(5)}, {"starting_time": 1624473685843, "ending_time": 1624473947750, "color":c0(5), "label": "4m 29s \/ 5 GB \/ CACHED"}, {"starting_time": 1624473947750, "ending_time": 1624473950909, "color":c1(5)}]},
+{"label": "salmon_quant (SRR1573512)", "times": [{"starting_time": 1624473683772, "ending_time": 1624473685852, "color":c1(5)}, {"starting_time": 1624473685852, "ending_time": 1624473763407, "color":c0(5), "label": "1m 27s \/ 2.6 GB \/ CACHED"}, {"starting_time": 1624473763407, "ending_time": 1624473770850, "color":c1(5)}]},
+{"label": "kallisto_quant (SRR1573519)", "times": [{"starting_time": 1624473954924, "ending_time": 1624473960863, "color":c1(4)}, {"starting_time": 1624473960863, "ending_time": 1624474181743, "color":c0(4), "label": "3m 51s \/ 4.9 GB \/ CACHED"}, {"starting_time": 1624474181743, "ending_time": 1624474185872, "color":c1(4)}]},
+{"label": "fastqc (batched)", "times": [{"starting_time": 1624473579205, "ending_time": 1624473580855, "color":c1(0)}, {"starting_time": 1624473580855, "ending_time": 1624473870991, "color":c0(0), "label": "4m 52s \/ 1015.9 MB \/ CACHED"}]},
+{"label": "gsnap_align (SRR1573506)", "times": [{"starting_time": 1624478108072, "ending_time": 1624478118922, "color":c1(6)}, {"starting_time": 1624478118922, "ending_time": 1624479452563, "color":c0(6), "label": "22m 41s \/ 25.7 GB \/ CACHED"}, {"starting_time": 1624479452563, "ending_time": 1624479469013, "color":c1(6)}]},
+{"label": "gsnap_align (SRR1573512)", "times": [{"starting_time": 1624478105693, "ending_time": 1624478108924, "color":c1(6)}, {"starting_time": 1624478108924, "ending_time": 1624478848993, "color":c0(6), "label": "12m 28s \/ 12.1 GB \/ CACHED"}, {"starting_time": 1624478848993, "ending_time": 1624478853972, "color":c1(6)}]},
+{"label": "gsnap_align (SRR1573519)", "times": [{"starting_time": 1624478111437, "ending_time": 1624478118935, "color":c1(6)}, {"starting_time": 1624478118935, "ending_time": 1624479762311, "color":c0(6), "label": "27m 53s \/ 12.1 GB \/ CACHED"}, {"starting_time": 1624479762311, "ending_time": 1624479784029, "color":c1(6)}]},
+{"label": "salmon_quant (SRR1573525)", "times": [{"starting_time": 1624473827035, "ending_time": 1624473830851, "color":c1(5)}, {"starting_time": 1624473830851, "ending_time": 1624473882148, "color":c0(5), "label": "58.8s \/ 2.8 GB \/ CACHED"}, {"starting_time": 1624473882148, "ending_time": 1624473885862, "color":c1(5)}]},
+{"label": "salmon_quant (SRR1573519)", "times": [{"starting_time": 1624473827887, "ending_time": 1624473830857, "color":c1(5)}, {"starting_time": 1624473830857, "ending_time": 1624473998156, "color":c0(5), "label": "2m 58s \/ 3 GB \/ CACHED"}, {"starting_time": 1624473998156, "ending_time": 1624474005862, "color":c1(5)}]},
+{"label": "salmon_quant (SRR1573508)", "times": [{"starting_time": 1624473886829, "ending_time": 1624473890860, "color":c1(5)}, {"starting_time": 1624473890860, "ending_time": 1624473978969, "color":c0(5), "label": "1m 39s \/ 2.7 GB \/ CACHED"}, {"starting_time": 1624473978969, "ending_time": 1624473985862, "color":c1(5)}]},
+{"label": "gsnap_align (SRR1573525)", "times": [{"starting_time": 1624478112463, "ending_time": 1624478118939, "color":c1(6)}, {"starting_time": 1624478118939, "ending_time": 1624478623110, "color":c0(6), "label": "8m 41s \/ 13.4 GB \/ CACHED"}, {"starting_time": 1624478623110, "ending_time": 1624478633958, "color":c1(6)}]},
+{"label": "gsnap_align (SRR1573508)", "times": [{"starting_time": 1624478114104, "ending_time": 1624478118943, "color":c1(6)}, {"starting_time": 1624478118943, "ending_time": 1624479202345, "color":c0(6), "label": "18m 30s \/ 12.2 GB \/ CACHED"}, {"starting_time": 1624479202345, "ending_time": 1624479223992, "color":c1(6)}]},
+{"label": "kallisto_quant (SRR1573526)", "times": [{"starting_time": 1624475378258, "ending_time": 1624475392880, "color":c1(4)}, {"starting_time": 1624475392880, "ending_time": 1624475549956, "color":c0(4), "label": "2m 55s \/ 4.7 GB \/ CACHED"}, {"starting_time": 1624475549956, "ending_time": 1624475552864, "color":c1(4)}]},
+{"label": "salmon_quant (SRR1573509)", "times": [{"starting_time": 1624474006774, "ending_time": 1624474010861, "color":c1(5)}, {"starting_time": 1624474010861, "ending_time": 1624474221023, "color":c0(5), "label": "3m 44s \/ 2.9 GB \/ CACHED"}, {"starting_time": 1624474221023, "ending_time": 1624474230872, "color":c1(5)}]},
+{"label": "kallisto_quant (SRR1573508)", "times": [{"starting_time": 1624473988417, "ending_time": 1624473990861, "color":c1(4)}, {"starting_time": 1624473990861, "ending_time": 1624474124262, "color":c0(4), "label": "2m 22s \/ 4.5 GB \/ CACHED"}, {"starting_time": 1624474124262, "ending_time": 1624474130866, "color":c1(4)}]},
+{"label": "salmon_quant (SRR1573521)", "times": [{"starting_time": 1624473948304, "ending_time": 1624473950919, "color":c1(5)}, {"starting_time": 1624473950919, "ending_time": 1624474044808, "color":c0(5), "label": "1m 43s \/ 3.2 GB \/ CACHED"}, {"starting_time": 1624474044808, "ending_time": 1624474050862, "color":c1(5)}]},
+{"label": "salmon_quant (SRR1573526)", "times": [{"starting_time": 1624474053402, "ending_time": 1624474055864, "color":c1(5)}, {"starting_time": 1624474055864, "ending_time": 1624474144026, "color":c0(5), "label": "1m 37s \/ 3.2 GB \/ CACHED"}, {"starting_time": 1624474144026, "ending_time": 1624474150867, "color":c1(5)}]},
+{"label": "kallisto_quant (SRR1573525)", "times": [{"starting_time": 1624474256751, "ending_time": 1624474260897, "color":c1(4)}, {"starting_time": 1624474260897, "ending_time": 1624474338567, "color":c0(4), "label": "1m 24s \/ 4.5 GB \/ CACHED"}, {"starting_time": 1624474338567, "ending_time": 1624474340877, "color":c1(4)}]},
+{"label": "salmon_quant (SRR1573511)", "times": [{"starting_time": 1624474052548, "ending_time": 1624474055862, "color":c1(5)}, {"starting_time": 1624474055862, "ending_time": 1624474142630, "color":c0(5), "label": "1m 33s \/ 2.9 GB \/ CACHED"}, {"starting_time": 1624474142630, "ending_time": 1624474145887, "color":c1(5)}]},
+{"label": "kallisto_quant (SRR1573521)", "times": [{"starting_time": 1624474031840, "ending_time": 1624474035862, "color":c1(4)}, {"starting_time": 1624474035862, "ending_time": 1624474186712, "color":c0(4), "label": "2m 39s \/ 4.9 GB \/ CACHED"}, {"starting_time": 1624474186712, "ending_time": 1624474190871, "color":c1(4)}]},
+{"label": "multiqc", "times": [{"starting_time": 1624475377386, "ending_time": 1624475392877, "color":c1(7)}, {"starting_time": 1624475392877, "ending_time": 1624475414914, "color":c0(7), "label": "35.5s \/ 167.8 MB \/ CACHED"}]},
+{"label": "kallisto_quant (SRR1573523)", "times": [{"starting_time": 1624474276756, "ending_time": 1624474280874, "color":c1(4)}, {"starting_time": 1624474280874, "ending_time": 1624474343124, "color":c0(4), "label": "1m 9s \/ 4.5 GB \/ CACHED"}, {"starting_time": 1624474343124, "ending_time": 1624474345878, "color":c1(4)}]},
+{"label": "gsnap_align (SRR1573523)", "times": [{"starting_time": 1624479195755, "ending_time": 1624479198989, "color":c1(6)}, {"starting_time": 1624479198989, "ending_time": 1624479442950, "color":c0(6), "label": "4m 18s \/ 12.1 GB \/ CACHED"}, {"starting_time": 1624479442950, "ending_time": 1624479454015, "color":c1(6)}]},
+{"label": "kallisto_quant (SRR1573509)", "times": [{"starting_time": 1624473786784, "ending_time": 1624473790849, "color":c1(4)}, {"starting_time": 1624473790849, "ending_time": 1624474091420, "color":c0(4), "label": "5m 14s \/ 4.5 GB \/ CACHED"}, {"starting_time": 1624474091420, "ending_time": 1624474100864, "color":c1(4)}]},
+{"label": "salmon_quant (SRR1573522)", "times": [{"starting_time": 1624473711811, "ending_time": 1624473715848, "color":c1(5)}, {"starting_time": 1624473715848, "ending_time": 1624473781695, "color":c0(5), "label": "1m 14s \/ 2.7 GB \/ CACHED"}, {"starting_time": 1624473781695, "ending_time": 1624473785850, "color":c1(5)}]},
+{"label": "kallisto_quant (SRR1573522)", "times": [{"starting_time": 1624473871792, "ending_time": 1624473875859, "color":c1(4)}, {"starting_time": 1624473875859, "ending_time": 1624473964205, "color":c0(4), "label": "1m 34s \/ 4.5 GB \/ CACHED"}, {"starting_time": 1624473964205, "ending_time": 1624473965862, "color":c1(4)}]},
+{"label": "gsnap_align (SRR1573521)", "times": [{"starting_time": 1624478116776, "ending_time": 1624478123923, "color":c1(6)}, {"starting_time": 1624478123923, "ending_time": 1624479238418, "color":c0(6), "label": "18m 57s \/ 12.1 GB \/ CACHED"}, {"starting_time": 1624479238418, "ending_time": 1624479254032, "color":c1(6)}]},
+{"label": "kallisto_quant (SRR1573511)", "times": [{"starting_time": 1624475379190, "ending_time": 1624475392882, "color":c1(4)}, {"starting_time": 1624475392882, "ending_time": 1624475545383, "color":c0(4), "label": "2m 49s \/ 4.8 GB \/ CACHED"}, {"starting_time": 1624475545383, "ending_time": 1624475547897, "color":c1(4)}]},
+{"label": "salmon_quant (SRR1573505)", "times": [{"starting_time": 1624474101823, "ending_time": 1624474105863, "color":c1(5)}, {"starting_time": 1624474105863, "ending_time": 1624474225830, "color":c0(5), "label": "2m 9s \/ 2.8 GB \/ CACHED"}, {"starting_time": 1624474225830, "ending_time": 1624474230888, "color":c1(5)}]},
+{"label": "salmon_quant (SRR1573523)", "times": [{"starting_time": 1624474151840, "ending_time": 1624474155866, "color":c1(5)}, {"starting_time": 1624474155866, "ending_time": 1624474183014, "color":c0(5), "label": "34.1s \/ 2.7 GB \/ CACHED"}, {"starting_time": 1624474183014, "ending_time": 1624474185891, "color":c1(5)}]},
+{"label": "salmon_quant (SRR1573510)", "times": [{"starting_time": 1624474186788, "ending_time": 1624474190885, "color":c1(5)}, {"starting_time": 1624474190885, "ending_time": 1624474269023, "color":c0(5), "label": "1m 29s \/ 2.7 GB \/ CACHED"}, {"starting_time": 1624474269023, "ending_time": 1624474275875, "color":c1(5)}]},
+{"label": "kallisto_quant (SRR1573505)", "times": [{"starting_time": 1624475380159, "ending_time": 1624475392884, "color":c1(4)}, {"starting_time": 1624475392884, "ending_time": 1624475556519, "color":c0(4), "label": "2m 58s \/ 4.5 GB \/ CACHED"}, {"starting_time": 1624475556519, "ending_time": 1624475557865, "color":c1(4)}]},
+{"label": "salmon_quant (SRR1573507)", "times": [{"starting_time": 1624473956792, "ending_time": 1624473960866, "color":c1(5)}, {"starting_time": 1624473960866, "ending_time": 1624474139152, "color":c0(5), "label": "3m 9s \/ 3 GB \/ CACHED"}, {"starting_time": 1624474139152, "ending_time": 1624474145867, "color":c1(5)}]},
+{"label": "salmon_quant (SRR1573524)", "times": [{"starting_time": 1624474191779, "ending_time": 1624474195870, "color":c1(5)}, {"starting_time": 1624474195870, "ending_time": 1624474364113, "color":c0(5), "label": "2m 59s \/ 4 GB \/ CACHED"}, {"starting_time": 1624474364113, "ending_time": 1624474370879, "color":c1(5)}]},
+{"label": "kallisto_quant (SRR1573524)", "times": [{"starting_time": 1624475381934, "ending_time": 1624475392888, "color":c1(4)}, {"starting_time": 1624475392888, "ending_time": 1624475837928, "color":c0(4), "label": "7m 41s \/ 8.4 GB \/ CACHED"}, {"starting_time": 1624475837928, "ending_time": 1624475842877, "color":c1(4)}]},
+{"label": "salmon_quant (SRR1573527)", "times": [{"starting_time": 1624474187890, "ending_time": 1624474190888, "color":c1(5)}, {"starting_time": 1624474190888, "ending_time": 1624474254050, "color":c0(5), "label": "1m 13s \/ 2.9 GB \/ CACHED"}, {"starting_time": 1624474254050, "ending_time": 1624474260873, "color":c1(5)}]},
+{"label": "kallisto_quant (SRR1573507)", "times": [{"starting_time": 1624475382839, "ending_time": 1624475417859, "color":c1(4)}, {"starting_time": 1624475417859, "ending_time": 1624475688160, "color":c0(4), "label": "5m 15s \/ 5 GB \/ CACHED"}, {"starting_time": 1624475688160, "ending_time": 1624475697869, "color":c1(4)}]},
+{"label": "kallisto_quant (SRR1573510)", "times": [{"starting_time": 1624474131782, "ending_time": 1624474135866, "color":c1(4)}, {"starting_time": 1624474135866, "ending_time": 1624474250237, "color":c0(4), "label": "2m 4s \/ 4.5 GB \/ CACHED"}, {"starting_time": 1624474250237, "ending_time": 1624474255872, "color":c1(4)}]},
+{"label": "kallisto_quant (SRR1573527)", "times": [{"starting_time": 1624475381048, "ending_time": 1624475392886, "color":c1(4)}, {"starting_time": 1624475392886, "ending_time": 1624475521089, "color":c0(4), "label": "2m 22s \/ 4.8 GB \/ CACHED"}, {"starting_time": 1624475521089, "ending_time": 1624475522865, "color":c1(4)}]},
+{"label": "gsnap_align (SRR1573520)", "times": [{"starting_time": 1624481974591, "ending_time": 1624481977557, "color":c1(6)}, {"starting_time": 1624481977557, "ending_time": 1624487828785, "color":c2(6), "label": "1h 38m 3s \/ 12.2 GB"}, {"starting_time": 1624487828785, "ending_time": 1624487857717, "color":c1(6)}]},
+{"label": "gsnap_align (SRR1573504)", "times": [{"starting_time": 1624481975510, "ending_time": 1624481977565, "color":c1(6)}, {"starting_time": 1624481977565, "ending_time": 1624484321427, "color":c2(6), "label": "39m 52s \/ 13.2 GB"}, {"starting_time": 1624484321427, "ending_time": 1624484367560, "color":c1(6)}]},
+{"label": "featureCounts_geneMult (SRR1573506)", "times": [{"starting_time": 1624481976579, "ending_time": 1624481982454, "color":c1(8)}, {"starting_time": 1624481982454, "ending_time": 1624481993149, "color":c2(8), "label": "20.9s \/ 472.7 MB"}, {"starting_time": 1624481993149, "ending_time": 1624481997445, "color":c1(8)}]},
+{"label": "featureCounts_mRNA (SRR1573512)", "times": [{"starting_time": 1624481977534, "ending_time": 1624481982461, "color":c1(9)}, {"starting_time": 1624481982461, "ending_time": 1624481984041, "color":c2(9), "label": "4.9s \/ 247.4 MB"}]},
+{"label": "featureCounts_mRNA (SRR1573519)", "times": [{"starting_time": 1624481978674, "ending_time": 1624481982486, "color":c1(9)}, {"starting_time": 1624481982486, "ending_time": 1624481997630, "color":c2(9), "label": "28.8s \/ 465.3 MB"}, {"starting_time": 1624481997630, "ending_time": 1624482007454, "color":c1(9)}]},
+{"label": "featureCounts_geneMult (SRR1573512)", "times": [{"starting_time": 1624481979768, "ending_time": 1624481987444, "color":c1(8)}, {"starting_time": 1624481987444, "ending_time": 1624481988854, "color":c2(8), "label": "7.7s \/ 244.9 MB"}]},
+{"label": "featureCounts_mRNA (SRR1573506)", "times": [{"starting_time": 1624481980632, "ending_time": 1624481987472, "color":c1(9)}, {"starting_time": 1624481987472, "ending_time": 1624481998973, "color":c2(9), "label": "21.8s \/ 469 MB"}, {"starting_time": 1624481998973, "ending_time": 1624482002450, "color":c1(9)}]},
+{"label": "featureCounts_gene (SRR1573506)", "times": [{"starting_time": 1624481981528, "ending_time": 1624481987479, "color":c1(10)}, {"starting_time": 1624481987479, "ending_time": 1624481998204, "color":c2(10), "label": "20.9s \/ 481.8 MB"}, {"starting_time": 1624481998204, "ending_time": 1624482002469, "color":c1(10)}]},
+{"label": "featureCounts_gene (SRR1573519)", "times": [{"starting_time": 1624481982476, "ending_time": 1624481987484, "color":c1(10)}, {"starting_time": 1624481987484, "ending_time": 1624482002474, "color":c2(10), "label": "25s \/ 448.4 MB"}, {"starting_time": 1624482002474, "ending_time": 1624482007481, "color":c1(10)}]},
+{"label": "featureCounts_gene (SRR1573512)", "times": [{"starting_time": 1624481983918, "ending_time": 1624481987493, "color":c1(10)}, {"starting_time": 1624481987493, "ending_time": 1624481988963, "color":c2(10), "label": "3.6s \/ 246.4 MB"}]},
+{"label": "featureCounts_geneMult (SRR1573519)", "times": [{"starting_time": 1624481984754, "ending_time": 1624481987528, "color":c1(8)}, {"starting_time": 1624481987528, "ending_time": 1624482002192, "color":c2(8), "label": "27.7s \/ 472.7 MB"}, {"starting_time": 1624482002192, "ending_time": 1624482012447, "color":c1(8)}]},
+{"label": "gsnap_align (SRR1573522)", "times": [{"starting_time": 1624481988721, "ending_time": 1624481992445, "color":c1(6)}, {"starting_time": 1624481992445, "ending_time": 1624483299052, "color":c2(6), "label": "22m 4s \/ 12.1 GB"}, {"starting_time": 1624483299052, "ending_time": 1624483312509, "color":c1(6)}]},
+{"label": "gsnap_align (SRR1573510)", "times": [{"starting_time": 1624481989605, "ending_time": 1624481992452, "color":c1(6)}, {"starting_time": 1624481992452, "ending_time": 1624482882769, "color":c2(6), "label": "15m 8s \/ 12.1 GB"}, {"starting_time": 1624482882769, "ending_time": 1624482897486, "color":c1(6)}]},
+{"label": "featureCounts_gene (SRR1573523)", "times": [{"starting_time": 1624481999131, "ending_time": 1624482002484, "color":c1(10)}, {"starting_time": 1624482002484, "ending_time": 1624482005953, "color":c2(10), "label": "8.4s \/ 454.3 MB"}, {"starting_time": 1624482005953, "ending_time": 1624482007502, "color":c1(10)}]},
+{"label": "featureCounts_gene (SRR1573525)", "times": [{"starting_time": 1624482003718, "ending_time": 1624482007514, "color":c1(10)}, {"starting_time": 1624482007514, "ending_time": 1624482012239, "color":c2(10), "label": "8.7s \/ 456.5 MB"}, {"starting_time": 1624482012239, "ending_time": 1624482012467, "color":c1(10)}]},
+{"label": "gsnap_align (SRR1573526)", "times": [{"starting_time": 1624482004633, "ending_time": 1624482017447, "color":c1(6)}, {"starting_time": 1624482017447, "ending_time": 1624483425388, "color":c2(6), "label": "23m 58s \/ 12.1 GB"}, {"starting_time": 1624483425388, "ending_time": 1624483442513, "color":c1(6)}]},
+{"label": "featureCounts_geneMult (SRR1573525)", "times": [{"starting_time": 1624482009136, "ending_time": 1624482012507, "color":c1(8)}, {"starting_time": 1624482012507, "ending_time": 1624482016746, "color":c2(8), "label": "13.3s \/ 468.9 MB"}, {"starting_time": 1624482016746, "ending_time": 1624482022453, "color":c1(8)}]},
+{"label": "gsnap_align (SRR1573509)", "times": [{"starting_time": 1624482010155, "ending_time": 1624482017451, "color":c1(6)}, {"starting_time": 1624482017451, "ending_time": 1624484392814, "color":c2(6), "label": "40m 27s \/ 12.1 GB"}, {"starting_time": 1624484392814, "ending_time": 1624484437578, "color":c1(6)}]},
+{"label": "featureCounts_geneMult (SRR1573508)", "times": [{"starting_time": 1624482011347, "ending_time": 1624482017455, "color":c1(8)}, {"starting_time": 1624482017455, "ending_time": 1624482026792, "color":c2(8), "label": "21.1s \/ 468.8 MB"}, {"starting_time": 1624482026792, "ending_time": 1624482032452, "color":c1(8)}]},
+{"label": "gsnap_align (SRR1573505)", "times": [{"starting_time": 1624482014135, "ending_time": 1624482022503, "color":c1(6)}, {"starting_time": 1624482022503, "ending_time": 1624483557772, "color":c2(6), "label": "26m 3s \/ 12.1 GB"}, {"starting_time": 1624483557772, "ending_time": 1624483577521, "color":c1(6)}]},
+{"label": "gsnap_align (SRR1573511)", "times": [{"starting_time": 1624482015200, "ending_time": 1624482022516, "color":c1(6)}, {"starting_time": 1624482022516, "ending_time": 1624483804495, "color":c2(6), "label": "30m 7s \/ 12.8 GB"}, {"starting_time": 1624483804495, "ending_time": 1624483822537, "color":c1(6)}]},
+{"label": "featureCounts_mRNA (SRR1573525)", "times": [{"starting_time": 1624482024203, "ending_time": 1624482027448, "color":c1(9)}, {"starting_time": 1624482027448, "ending_time": 1624482031757, "color":c2(9), "label": "8.3s \/ 477.6 MB"}, {"starting_time": 1624482031757, "ending_time": 1624482032497, "color":c1(9)}]},
+{"label": "featureCounts_mRNA (SRR1573508)", "times": [{"starting_time": 1624482033656, "ending_time": 1624482037450, "color":c1(9)}, {"starting_time": 1624482037450, "ending_time": 1624482047273, "color":c2(9), "label": "18.8s \/ 455.2 MB"}, {"starting_time": 1624482047273, "ending_time": 1624482052452, "color":c1(9)}]},
+{"label": "featureCounts_gene (SRR1573508)", "times": [{"starting_time": 1624482036453, "ending_time": 1624482042480, "color":c1(10)}, {"starting_time": 1624482042480, "ending_time": 1624482051465, "color":c2(10), "label": "21s \/ 480.5 MB"}, {"starting_time": 1624482051465, "ending_time": 1624482057453, "color":c1(10)}]},
+{"label": "featureCounts_geneMult (SRR1573523)", "times": [{"starting_time": 1624482053718, "ending_time": 1624482057479, "color":c1(8)}, {"starting_time": 1624482057479, "ending_time": 1624482060809, "color":c2(8), "label": "8.7s \/ 460.1 MB"}, {"starting_time": 1624482060809, "ending_time": 1624482062452, "color":c1(8)}]},
+{"label": "featureCounts_mRNA (SRR1573523)", "times": [{"starting_time": 1624482058749, "ending_time": 1624482062470, "color":c1(9)}, {"starting_time": 1624482062470, "ending_time": 1624482065643, "color":c2(9), "label": "8.7s \/ 473.4 MB"}, {"starting_time": 1624482065643, "ending_time": 1624482067452, "color":c1(9)}]},
+{"label": "featureCounts_geneMult (SRR1573521)", "times": [{"starting_time": 1624482064256, "ending_time": 1624482072452, "color":c1(8)}, {"starting_time": 1624482072452, "ending_time": 1624482081006, "color":c2(8), "label": "18.2s \/ 452.3 MB"}, {"starting_time": 1624482081006, "ending_time": 1624482082452, "color":c1(8)}]},
+{"label": "featureCounts_mRNA (SRR1573521)", "times": [{"starting_time": 1624482068859, "ending_time": 1624482072457, "color":c1(9)}, {"starting_time": 1624482072457, "ending_time": 1624482081180, "color":c2(9), "label": "18.6s \/ 451.2 MB"}, {"starting_time": 1624482081180, "ending_time": 1624482087453, "color":c1(9)}]},
+{"label": "featureCounts_gene (SRR1573521)", "times": [{"starting_time": 1624482083675, "ending_time": 1624482087473, "color":c1(10)}, {"starting_time": 1624482087473, "ending_time": 1624482095679, "color":c2(10), "label": "13.8s \/ 458.8 MB"}, {"starting_time": 1624482095679, "ending_time": 1624482097452, "color":c1(10)}]},
+{"label": "gsnap_align (SRR1573507)", "times": [{"starting_time": 1624482088740, "ending_time": 1624482092452, "color":c1(6)}, {"starting_time": 1624482092452, "ending_time": 1624484894078, "color":c2(6), "label": "47m 14s \/ 12.2 GB"}, {"starting_time": 1624484894078, "ending_time": 1624484922623, "color":c1(6)}]},
+{"label": "gsnap_align (SRR1573527)", "times": [{"starting_time": 1624482098784, "ending_time": 1624482102987, "color":c1(6)}, {"starting_time": 1624482102987, "ending_time": 1624482951593, "color":c2(6), "label": "14m 24s \/ 12.1 GB"}, {"starting_time": 1624482951593, "ending_time": 1624482962494, "color":c1(6)}]},
+{"label": "gsnap_align (SRR1573524)", "times": [{"starting_time": 1624482898404, "ending_time": 1624482902491, "color":c1(6)}, {"starting_time": 1624482902491, "ending_time": 1624485721558, "color":c2(6), "label": "47m 24s \/ 12.2 GB"}, {"starting_time": 1624485721558, "ending_time": 1624485742642, "color":c1(6)}]},
+{"label": "featureCounts_geneMult (SRR1573510)", "times": [{"starting_time": 1624482963421, "ending_time": 1624482967493, "color":c1(8)}, {"starting_time": 1624482967493, "ending_time": 1624482975261, "color":c2(8), "label": "19.1s \/ 451.6 MB"}, {"starting_time": 1624482975261, "ending_time": 1624482982495, "color":c1(8)}]},
+{"label": "featureCounts_mRNA (SRR1573510)", "times": [{"starting_time": 1624482983440, "ending_time": 1624482987493, "color":c1(9)}, {"starting_time": 1624482987493, "ending_time": 1624482995422, "color":c2(9), "label": "14.1s \/ 452.9 MB"}, {"starting_time": 1624482995422, "ending_time": 1624482997495, "color":c1(9)}]},
+{"label": "featureCounts_gene (SRR1573510)", "times": [{"starting_time": 1624482999386, "ending_time": 1624483002526, "color":c1(10)}, {"starting_time": 1624483002526, "ending_time": 1624483010607, "color":c2(10), "label": "18.1s \/ 460.2 MB"}, {"starting_time": 1624483010607, "ending_time": 1624483017496, "color":c1(10)}]},
+{"label": "featureCounts_gene (SRR1573527)", "times": [{"starting_time": 1624483018442, "ending_time": 1624483022494, "color":c1(10)}, {"starting_time": 1624483022494, "ending_time": 1624483028747, "color":c2(10), "label": "14.1s \/ 465.2 MB"}, {"starting_time": 1624483028747, "ending_time": 1624483032507, "color":c1(10)}]},
+{"label": "featureCounts_mRNA (SRR1573527)", "times": [{"starting_time": 1624483033451, "ending_time": 1624483037495, "color":c1(9)}, {"starting_time": 1624483037495, "ending_time": 1624483043961, "color":c2(9), "label": "14s \/ 475.4 MB"}, {"starting_time": 1624483043961, "ending_time": 1624483047500, "color":c1(9)}]},
+{"label": "featureCounts_geneMult (SRR1573527)", "times": [{"starting_time": 1624483048397, "ending_time": 1624483052495, "color":c1(8)}, {"starting_time": 1624483052495, "ending_time": 1624483058944, "color":c2(8), "label": "14.1s \/ 464.8 MB"}, {"starting_time": 1624483058944, "ending_time": 1624483062530, "color":c1(8)}]},
+{"label": "featureCounts_gene (SRR1573522)", "times": [{"starting_time": 1624483313493, "ending_time": 1624483322511, "color":c1(10)}, {"starting_time": 1624483322511, "ending_time": 1624483336406, "color":c2(10), "label": "29s \/ 461.1 MB"}, {"starting_time": 1624483336406, "ending_time": 1624483342510, "color":c1(10)}]},
+{"label": "featureCounts_mRNA (SRR1573522)", "times": [{"starting_time": 1624483314498, "ending_time": 1624483317511, "color":c1(9)}, {"starting_time": 1624483317511, "ending_time": 1624483323858, "color":c2(9), "label": "13s \/ 459 MB"}, {"starting_time": 1624483323858, "ending_time": 1624483327512, "color":c1(9)}]},
+{"label": "featureCounts_geneMult (SRR1573522)", "times": [{"starting_time": 1624483328496, "ending_time": 1624483332509, "color":c1(8)}, {"starting_time": 1624483332509, "ending_time": 1624483339643, "color":c2(8), "label": "14s \/ 468.7 MB"}, {"starting_time": 1624483339643, "ending_time": 1624483342528, "color":c1(8)}]},
+{"label": "featureCounts_geneMult (SRR1573526)", "times": [{"starting_time": 1624483443448, "ending_time": 1624483447513, "color":c1(8)}, {"starting_time": 1624483447513, "ending_time": 1624483456955, "color":c2(8), "label": "19.1s \/ 456.6 MB"}, {"starting_time": 1624483456955, "ending_time": 1624483462523, "color":c1(8)}]},
+{"label": "featureCounts_gene (SRR1573526)", "times": [{"starting_time": 1624483444544, "ending_time": 1624483447516, "color":c1(10)}, {"starting_time": 1624483447516, "ending_time": 1624483457774, "color":c2(10), "label": "18s \/ 468.6 MB"}, {"starting_time": 1624483457774, "ending_time": 1624483462558, "color":c1(10)}]},
+{"label": "featureCounts_mRNA (SRR1573526)", "times": [{"starting_time": 1624483445474, "ending_time": 1624483447518, "color":c1(9)}, {"starting_time": 1624483447518, "ending_time": 1624483458294, "color":c2(9), "label": "17.1s \/ 459.2 MB"}, {"starting_time": 1624483458294, "ending_time": 1624483462573, "color":c1(9)}]},
+{"label": "featureCounts_geneMult (SRR1573505)", "times": [{"starting_time": 1624483578534, "ending_time": 1624483582520, "color":c1(8)}, {"starting_time": 1624483582520, "ending_time": 1624483593636, "color":c2(8), "label": "24.1s \/ 451.7 MB"}, {"starting_time": 1624483593636, "ending_time": 1624483602620, "color":c1(8)}]},
+{"label": "featureCounts_gene (SRR1573505)", "times": [{"starting_time": 1624483579963, "ending_time": 1624483582523, "color":c1(10)}, {"starting_time": 1624483582523, "ending_time": 1624483593000, "color":c2(10), "label": "17.6s \/ 460.7 MB"}, {"starting_time": 1624483593000, "ending_time": 1624483597524, "color":c1(10)}]},
+{"label": "featureCounts_mRNA (SRR1573505)", "times": [{"starting_time": 1624483581092, "ending_time": 1624483587522, "color":c1(9)}, {"starting_time": 1624483587522, "ending_time": 1624483599247, "color":c2(9), "label": "21.5s \/ 459.4 MB"}, {"starting_time": 1624483599247, "ending_time": 1624483602640, "color":c1(9)}]},
+{"label": "featureCounts_gene (SRR1573511)", "times": [{"starting_time": 1624483825807, "ending_time": 1624483832537, "color":c1(10)}, {"starting_time": 1624483832537, "ending_time": 1624483840989, "color":c2(10), "label": "16.8s \/ 472.4 MB"}, {"starting_time": 1624483840989, "ending_time": 1624483842568, "color":c1(10)}]},
+{"label": "featureCounts_mRNA (SRR1573511)", "times": [{"starting_time": 1624483826699, "ending_time": 1624483832543, "color":c1(9)}, {"starting_time": 1624483832543, "ending_time": 1624483841102, "color":c2(9), "label": "15.9s \/ 459 MB"}, {"starting_time": 1624483841102, "ending_time": 1624483842585, "color":c1(9)}]},
+{"label": "featureCounts_geneMult (SRR1573511)", "times": [{"starting_time": 1624483827557, "ending_time": 1624483832547, "color":c1(8)}, {"starting_time": 1624483832547, "ending_time": 1624483840775, "color":c2(8), "label": "15s \/ 451.9 MB"}, {"starting_time": 1624483840775, "ending_time": 1624483842603, "color":c1(8)}]},
+{"label": "featureCounts_mRNA (SRR1573504)", "times": [{"starting_time": 1624484369424, "ending_time": 1624484372558, "color":c1(9)}, {"starting_time": 1624484372558, "ending_time": 1624484394528, "color":c2(9), "label": "38.2s \/ 464.8 MB"}, {"starting_time": 1624484394528, "ending_time": 1624484407579, "color":c1(9)}]},
+{"label": "featureCounts_gene (SRR1573504)", "times": [{"starting_time": 1624484370389, "ending_time": 1624484377571, "color":c1(10)}, {"starting_time": 1624484377571, "ending_time": 1624484398771, "color":c2(10), "label": "37.2s \/ 450 MB"}, {"starting_time": 1624484398771, "ending_time": 1624484407611, "color":c1(10)}]},
+{"label": "featureCounts_geneMult (SRR1573504)", "times": [{"starting_time": 1624484372310, "ending_time": 1624484377576, "color":c1(8)}, {"starting_time": 1624484377576, "ending_time": 1624484399453, "color":c2(8), "label": "35.3s \/ 469.1 MB"}, {"starting_time": 1624484399453, "ending_time": 1624484407633, "color":c1(8)}]},
+{"label": "featureCounts_gene (SRR1573509)", "times": [{"starting_time": 1624484438499, "ending_time": 1624484443399, "color":c1(10)}, {"starting_time": 1624484443399, "ending_time": 1624484467363, "color":c2(10), "label": "44.1s \/ 454.2 MB"}, {"starting_time": 1624484467363, "ending_time": 1624484482577, "color":c1(10)}]},
+{"label": "featureCounts_geneMult (SRR1573509)", "times": [{"starting_time": 1624484439345, "ending_time": 1624484443402, "color":c1(8)}, {"starting_time": 1624484443402, "ending_time": 1624484467384, "color":c2(8), "label": "43.2s \/ 460.6 MB"}, {"starting_time": 1624484467384, "ending_time": 1624484482594, "color":c1(8)}]},
+{"label": "featureCounts_mRNA (SRR1573509)", "times": [{"starting_time": 1624484442691, "ending_time": 1624484447577, "color":c1(9)}, {"starting_time": 1624484447577, "ending_time": 1624484469065, "color":c2(9), "label": "34.9s \/ 469.1 MB"}, {"starting_time": 1624484469065, "ending_time": 1624484477584, "color":c1(9)}]},
+{"label": "featureCounts_mRNA (SRR1573507)", "times": [{"starting_time": 1624484923569, "ending_time": 1624484927591, "color":c1(9)}, {"starting_time": 1624484927591, "ending_time": 1624484945582, "color":c2(9), "label": "29s \/ 458.8 MB"}, {"starting_time": 1624484945582, "ending_time": 1624484952607, "color":c1(9)}]},
+{"label": "featureCounts_gene (SRR1573507)", "times": [{"starting_time": 1624484924458, "ending_time": 1624484927594, "color":c1(10)}, {"starting_time": 1624484927594, "ending_time": 1624484944265, "color":c2(10), "label": "28.2s \/ 462.1 MB"}, {"starting_time": 1624484944265, "ending_time": 1624484952640, "color":c1(10)}]},
+{"label": "featureCounts_geneMult (SRR1573507)", "times": [{"starting_time": 1624484925524, "ending_time": 1624484932592, "color":c1(8)}, {"starting_time": 1624484932592, "ending_time": 1624484952010, "color":c2(8), "label": "37.1s \/ 482.6 MB"}, {"starting_time": 1624484952010, "ending_time": 1624484962596, "color":c1(8)}]},
+{"label": "featureCounts_mRNA (SRR1573524)", "times": [{"starting_time": 1624485744352, "ending_time": 1624485747639, "color":c1(9)}, {"starting_time": 1624485747639, "ending_time": 1624485762236, "color":c2(9), "label": "23.3s \/ 465.1 MB"}, {"starting_time": 1624485762236, "ending_time": 1624485767643, "color":c1(9)}]},
+{"label": "featureCounts_gene (SRR1573524)", "times": [{"starting_time": 1624485745252, "ending_time": 1624485747642, "color":c1(10)}, {"starting_time": 1624485747642, "ending_time": 1624485764032, "color":c2(10), "label": "27.4s \/ 468.9 MB"}, {"starting_time": 1624485764032, "ending_time": 1624485772642, "color":c1(10)}]},
+{"label": "featureCounts_geneMult (SRR1573524)", "times": [{"starting_time": 1624485746388, "ending_time": 1624485752641, "color":c1(8)}, {"starting_time": 1624485752641, "ending_time": 1624485787448, "color":c2(8), "label": "51.3s \/ 463 MB"}, {"starting_time": 1624485787448, "ending_time": 1624485797646, "color":c1(8)}]},
+{"label": "featureCounts_geneMult (SRR1573520)", "times": [{"starting_time": 1624487858794, "ending_time": 1624487862715, "color":c1(8)}, {"starting_time": 1624487862715, "ending_time": 1624487889064, "color":c2(8), "label": "38.9s \/ 462.4 MB"}, {"starting_time": 1624487889064, "ending_time": 1624487897717, "color":c1(8)}]},
+{"label": "featureCounts_gene (SRR1573520)", "times": [{"starting_time": 1624487859707, "ending_time": 1624487862718, "color":c1(10)}, {"starting_time": 1624487862718, "ending_time": 1624487886811, "color":c2(10), "label": "33s \/ 461.9 MB"}, {"starting_time": 1624487886811, "ending_time": 1624487892721, "color":c1(10)}]},
+{"label": "featureCounts_mRNA (SRR1573520)", "times": [{"starting_time": 1624487860841, "ending_time": 1624487867716, "color":c1(9)}, {"starting_time": 1624487867716, "ending_time": 1624487893349, "color":c2(9), "label": "36.9s \/ 462.8 MB"}, {"starting_time": 1624487893349, "ending_time": 1624487897733, "color":c1(9)}]}
+]
+
+
+function getTickFormat() {
+  var MIN = 1000 * 60
+  var HOUR = MIN * 60
+  var DAY = HOUR * 24
+  var delta = (endingMillis - beginningMillis)
+
+  if( delta < 2 * MIN ) {
+    return {
+      format: d3.time.format("%S"),
+      tickTime: d3.time.seconds,
+      tickInterval: 5,
+      tickSize: 6
+    }
+  }
+
+  if( delta < 2 * HOUR ) {
+    return {
+      format: d3.time.format("%M"),
+      tickTime: d3.time.minutes,
+      tickInterval: 5,
+      tickSize: 6
+    }
+  }
+
+  if( delta < 2 * DAY ) {
+    return {
+      format: d3.time.format("%H:%M"),
+      tickTime: d3.time.hours,
+      tickInterval: 1,
+      tickSize: 6
+    }
+  }
+
+  if( delta <= 7 * DAY ) {
+    return {
+      format: d3.time.format("%b %e %H:%M"),
+      tickTime: d3.time.hours,
+      tickInterval: 6,
+      tickSize: 6
+    }
+  }
+
+  return {
+    format: d3.time.format("%b %e"),
+    tickTime: d3.time.days,
+    tickInterval: 1,
+    tickSize: 6
+  }
+}
+
+function getLabelMargin(scale) {
+    $('<span class="labelSpan" style="display: none"></span>').appendTo('body');
+
+    var labelMargin = 0
+    $.each(data, function (key, value) {
+      labelMargin = Math.max(labelMargin, $('.labelSpan').html(value.label).width());
+    });
+
+    $('.labelSpan').remove();
+
+    return (labelMargin * scale);
+}
+
+function render() {
+  handler=null;
+  $("#timeline").empty()
+  $('#label_elapsed').text(elapsed)
+  $('#label_launch').text( d3.time.format('%d %b %Y %H:%M')(new Date(beginningMillis)) )
+
+  var width = $(window).width();
+  var chart = d3.timeline()
+    .stack() // toggles graph stacking
+    .margin({left:getLabelMargin(0.85), right:100, top:0, bottom:0})
+    .tickFormat( getTickFormat() )
+    .rowSeperators('#f5f5f5')
+    .showTimeAxisTick()
+    ;
+  var svg = d3.select("#timeline").append("svg").attr("width", width).datum(data).call(chart);
+}
+
+function hrz() {
+if( handler != null ) clearTimeout(handler)
+  handler = setTimeout(render, 150);
+}
+
+$(document).ready(render)
+$(window).resize(hrz); // resize the applet on window resize
+</script>
+</head>
+
+<body>
+<div>
+  <h3>Processes execution timeline</h3>
+  <p>
+    Launch time: <span id='label_launch'> </span><br>
+    Elapsed time: <span id='label_elapsed'> </span><br>
+    Legend: job wall time / memory usage (RAM) <span id='label_legend'> </span>
+  </p>
+  <div id="timeline"></div>
+</div>
+
+<div id='footer'>
+  Created with Nextflow -- <a href='http://www.nextflow.io' target='_blank'>http://nextflow.io</a>
+</div>
+
+<script type="text/javascript">
+var prot = (("https:" == document.location.protocol) ? "https://" : "http://");
+document.write(unescape("%3Clink href='" + prot + "fonts.googleapis.com/css?family=Lato' rel='stylesheet' type='text/css' %3E%3C/link%3E"));
+</script>
+</body>
+</html>

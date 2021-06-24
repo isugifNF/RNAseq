@@ -11,4 +11,5 @@ dependencies:
   - kallisto
   - salmon
   - gmap
-
+  - samtools
+  - subread
