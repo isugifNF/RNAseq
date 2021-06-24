@@ -35,10 +35,11 @@ cd ${SLURM_SUBMIT_DIR}
 # === Main Program
 ${NEXTFLOW} run main.nf \
   --reads "00_Raw-Data/*{1,2}.fastq.gz" \
-  --genome "02_Genome/*_genomic.fna.gz" \
-  --genome_gff "02_Genome/*.gff.gz" \
-  --genome_cdna "02_Genome/*.cdna.all.fa.gz" \
+  --genome "00_Raw-Data/*_genomic.fna.gz" \
+  --genome_gff "00_Raw-Data/*.gff.gz" \
+  --genome_cdna "00_Raw-Data/*_rna.fna.gz" \
   --queueSize 25 \
   -profile slurm \
   -resume
   #--account isu_gif_vrsc       #<= add this to Atlas
+
