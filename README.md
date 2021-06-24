@@ -7,10 +7,9 @@ nextflow run main.nf --help
 ```
 
 ```
-N E X T F L O W  ~  version 21.04.0
-Launching `main.nf` [berserk_celsius] - revision: 8a7622a6be
-
-   Usage:
+N E X T F L O W  ~  version 20.07.1
+Launching `main.nf` [curious_curran] - revision: 7d9f51e73b
+Usage:
    The typical command for running the RNAseq pipeline is as follows:
    nextflow run main.nf --reads "*_{R1,R2}.fastq.gz" --genome GENOME.fasta --genome_gff GENOME.gff --genome_cdna CDNA.fasta  -profile singularity
 
@@ -21,6 +20,7 @@ Launching `main.nf` [berserk_celsius] - revision: 8a7622a6be
     --genome_cdna           Reference cdna file
 
    Optional configuration arguments:
+    --methods               Select one or more RNAseq counting methods [default: 'gsnap,hisat2,kallisto,salmon']
     -profile                Configuration profile to use. Can use multiple (comma separated)
                             Available: local, slurm [default:local]
     --fastqc_app            Link to fastqc executable [default: 'fastqc']
@@ -37,12 +37,13 @@ Launching `main.nf` [berserk_celsius] - revision: 8a7622a6be
     --account               HPC account name for slurm sbatch, atlas and ceres requires this
     --help
 ```
+
 ## Example Dataset
 
 <details><summary>Fetch Maize Reads</summary>
 
 ```
-mkdir 00_INPUT; cd 00_INPUT;
+mkdir 00_Raw-Data; cd 00_Raw-Data;
 # ==== Fetch Reads
 # === Blade Tissue
 wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR157/004/SRR1573504/SRR1573504_1.fastq.gz
@@ -102,8 +103,8 @@ Fetch `Zea mays` reference files from NCBI
 * https://www.ncbi.nlm.nih.gov/assembly/GCF_902167145.1/
 
 ```
-mkdir 02_Genome; cd 02_Genome
- 
+cd 00_Raw-Data
+
 wget ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/902/167/145/GCF_902167145.1_Zm-B73-REFERENCE-NAM-5.0/GCF_902167145.1_Zm-B73-REFERENCE-NAM-5.0_genomic.fna.gz
 wget ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/902/167/145/GCF_902167145.1_Zm-B73-REFERENCE-NAM-5.0/GCF_902167145.1_Zm-B73-REFERENCE-NAM-5.0_genomic.gff.gz
 wget ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/902/167/145/GCF_902167145.1_Zm-B73-REFERENCE-NAM-5.0/GCF_902167145.1_Zm-B73-REFERENCE-NAM-5.0_rna.fna.gz
@@ -143,3 +144,56 @@ RNASeq_Results/
   |_ report.html             # memory usage report
   |_ timeline.html           # runtime report
 ```
+
+<details><summary>See example run on <b>Ceres HPC</b> - last update 24 June 2021 </summary>
+
+Ran in 1 hour and 48 minutes. The below commands were wrapped in a slurm script.
+
+```
+# Ceres Modules
+module load nextflow
+module load parallel 
+module load fastqc
+module load python_3
+module load salmon/0.10.1
+module load kallisto/0.42.4
+module load hisat2/2.2.0
+module load gmap_gsnap/2020-04-08
+module load samtools
+module load subread/2.0.2
+
+# Main command
+nextflow run main.nf \
+  --reads "00_Raw-Data/*{1,2}.fastq.gz" \
+  --genome "00_Raw-Data/*_genomic.fna.gz" \
+  --genome_gff "00_Raw-Data/*.gff.gz" \
+  --genome_cdna "00_Raw-Data/*_rna.fna.gz" \
+  --queueSize 25 \
+  -profile slurm \
+  -resume
+```
+
+Progress messages
+
+```
+N E X T F L O W  ~  version 20.07.1
+Launching `main.nf` [elated_kilby] - revision: 7d9f51e73b
+executor >  slurm (117)
+[5e/2c59b1] process > fastqc (batched)               [100%] 5 of 5 ✔
+[90/ed372f] process > multiqc                        [100%] 1 of 1 ✔
+[b7/06aa08] process > kallisto_index (GCF_9021671... [100%] 1 of 1 ✔
+[62/2027e7] process > kallisto_quant (SRR1573520)    [100%] 18 of 18 ✔
+[3e/ebd42f] process > salmon_index (GCF_902167145... [100%] 1 of 1 ✔
+[d9/03b7df] process > salmon_quant (SRR1573520)      [100%] 18 of 18 ✔
+[4c/ec81ca] process > gsnap_index (GCF_902167145)    [100%] 1 of 1 ✔
+[36/237247] process > gsnap_align (SRR1573520)       [100%] 18 of 18 ✔
+[5f/54c2e9] process > featureCounts_gene (SRR1573... [100%] 18 of 18 ✔
+[c7/f2c642] process > featureCounts_mRNA (SRR1573... [100%] 18 of 18 ✔
+[db/3e6c52] process > featureCounts_geneMult (SRR... [100%] 18 of 18 ✔
+Completed at: 24-Jun-2021 13:07:28
+Duration    : 1h 48m 38s
+CPU hours   : 11.5
+Succeeded   : 117
+```
+
+</details>
