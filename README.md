@@ -132,4 +132,14 @@ CPU hours   : 71.3
 Succeeded   : 154
 ```
 
+[timeline.html](https://isugifnf.github.io/RNAseq/timeline.html) | [report.html](https://isugifnf.github.io/RNAseq/report.html)
 
+```
+RNASeq_Results/
+  |_ 01_Quality-Control/     # fastqc and multiqc report
+  |_ 03_GSNAP                # gene counts from GSNAP
+  |_ 03_Kallisto             # transcript counts from kallisto (ready for sleuth analysis)
+  |_ 03_Salmon               # transcript counts from salmon (ready for DESeq2 analysis)
+  |_ report.html             # memory usage report
+  |_ timeline.html           # runtime report
+```
