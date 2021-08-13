@@ -45,43 +45,32 @@ if(params.help){
 }
 
 // === Define Processes
-
 process fastqc {
     tag "batched"
     label 'fastqc'
-//    executor 'slurm'
-//    clusterOptions '-N 1 -n 16 -t 02:00:00 --account=isu_gif_vrsc'
-//    module 'fastqc:parallel'
 
     publishDir "${params.outdir}/01_Quality-Control", mode: 'copy',
         saveAs: { filename -> filename.indexOf(".zip") > 0 ? "zips/$filename" : "$filename" }
 
-    input:
-    path(read)
-
-    output:
-    path("*_fastqc.{zip,html}")
-
+    input: path(read)
+    output: path("*_fastqc.{zip,html}")
     script:
     """
     #! /usr/bin/env bash
-    $parallel_app -j8 "$fastqc_app {1}" ::: $read
+    PROC=\$((`nproc`))
+    ${parallel_app} -j \${PROC} "${fastqc_app} {1}" ::: ${read}
     """
 }
 
 process multiqc {
     label 'multiqc'
-//    executor 'slurm'
-//    clusterOptions '-N 1 -n 16 -t 02:00:00 --account=isu_gif_vrsc'
 
     publishDir "${params.outdir}/01_Quality-Control", mode: 'copy',
         saveAs: { filename -> filename.indexOf(".zip") > 0 ? "zips/$filename" : "$filename" }
 
-    input:
-    path fastqc_htmls
+    input: path fastqc_htmls
 
-    output:
-    path "multiqc_report.html"
+    output: path "multiqc_report.html"
 
     script:
     """
@@ -93,16 +82,12 @@ process multiqc {
 process kallisto_index {
     tag "$genome_cdna"
     label 'kallisto'
-//    executor 'slurm'
-//    clusterOptions '-N 1 -n 16 -t 02:00:00 --account=isu_gif_vrsc'
 
     publishDir "${params.outdir}/03_Kallisto", mode: 'copy'
 
-    input:
-    path(genome_cdna)
+    input: path(genome_cdna)
 
-    output:
-    path("${genome_cdna.simpleName}.idx")
+    output: path("${genome_cdna.simpleName}.idx")
 
     script:
     """
@@ -115,22 +100,18 @@ process kallisto_index {
 process kallisto_quant {
     tag "${readname}"
     label 'kallisto'
-//    executor 'slurm'
-//    clusterOptions '-N 1 -n 16 -t 02:00:00 --account=isu_gif_vrsc'
 
     publishDir "${params.outdir}/03_Kallisto", mode: 'copy'
 
-    input:
-    tuple path(genome_index), val(readname), path(read_pairs)
+    input: tuple path(genome_index), val(readname), path(read_pairs)
 
-    output:
-    path("*")
+    output: path("*")
 
     script:
     """
     #! /usr/bin/env bash
     PROC=\$((`nproc`))
-    $kallisto_app quant \
+    ${kallisto_app} quant \
      -i ${genome_index} \
      -o ${readname}_quant \
      -b 20 -t \$PROC \
@@ -141,16 +122,12 @@ process kallisto_quant {
 process salmon_index {
     tag "$genome_cdna"
     label 'salmon'
-//    executor 'slurm'
-//    clusterOptions '-N 1 -n 16 -t 02:00:00 --account=isu_gif_vrsc'
 
     publishDir "${params.outdir}/03_Salmon", mode: 'copy'
 
-    input:
-    path(genome_cdna)
+    input: path(genome_cdna)
 
-    output:
-    tuple val("${genome_cdna.simpleName}"), path("*")
+    output: tuple val("${genome_cdna.simpleName}"), path("*")
 
     script:
     """
@@ -164,8 +141,6 @@ process salmon_index {
 process salmon_quant {
     tag "${readname}"
     label 'salmon'
-//    executor 'slurm'
-//    clusterOptions '-N 1 -n 16 -t 04:00:00 --account=isu_gif_vrsc'
 
     publishDir "${params.outdir}/03_Salmon", mode: 'copy'
 
@@ -192,8 +167,6 @@ process salmon_quant {
 process gsnap_index {
     tag "${genome_gz.simpleName}"
     label 'gsnap'
-//    executor 'slurm'
-//    clusterOptions '-N 1 -n 16 -t 02:00:00 --account=isu_gif_vrsc'
 
     publishDir "${params.outdir}/03_GSNAP", mode: 'copy'
 
@@ -217,22 +190,19 @@ process gsnap_index {
 process gsnap_align {
     tag "${readname}"
     label 'gsnap'
-//    executor 'slurm'
-//    clusterOptions '-N 1 -n 16 -t 04:00:00 --account=isu_gif_vrsc'
 
     publishDir "${params.outdir}/03_GSNAP", mode: 'copy'
 
-    input:
-    tuple val(genome_name), path(gmap_dir),val(readname), path(read_pairs)
+    input: tuple val(genome_name), path(gmap_dir),val(readname), path(read_pairs)
 
-    output:
-    path("*")
+    output: path("*")
 
     script:
     """
     #! /usr/bin/env bash
-    PROC=\$((`nproc`-4))
-    $gsnap_app \
+    PROC=\$(((`nproc`-1)*3/4+1))
+    PROC2=\$(((`nproc`-1)*1/4+1))
+    ${gsnap_app} \
      --gunzip \
      -d ${genome_name} \
      -D gmapdb/ \
@@ -241,23 +211,18 @@ process gsnap_align {
      --output-buffer-size=1000000 \
      -A sam \
      ${read_pairs} |
-     samtools view --threads 4 -bS - > ${readname}.bam
+     samtools view --threads \$PROC -bS - > ${readname}.bam
     """
 }
 
 process featureCounts_gene {
     tag "${read_bam.simpleName}"
     label 'gsnap'
-//    executor 'slurm'
-//    clusterOptions '-N 1 -n 16 -t 04:00:00 --account=isu_gif_vrsc'
 
     publishDir "${params.outdir}/03_GSNAP", mode: 'copy'
+    input: tuple path(read_bam), path(genome_gff)
 
-    input:
-    tuple path(read_bam), path(genome_gff)
-
-    output:
-    path("*")
+    output: path("*")
 
     script:
     """
@@ -277,8 +242,6 @@ process featureCounts_gene {
 process featureCounts_mRNA {
     tag "${read_bam.simpleName}"
     label 'gsnap'
-//    executor 'slurm'
-//    clusterOptions '-N 1 -n 16 -t 04:00:00 --account=isu_gif_vrsc'
 
     publishDir "${params.outdir}/03_GSNAP", mode: 'copy'
 
@@ -305,8 +268,6 @@ process featureCounts_mRNA {
 process featureCounts_geneMult {
     tag "${read_bam.simpleName}"
     label 'gsnap'
-//    executor 'slurm'
-//    clusterOptions '-N 1 -n 16 -t 04:00:00  --account=isu_gif_vrsc'
 
     publishDir "${params.outdir}/03_GSNAP", mode: 'copy'
 
@@ -332,13 +293,18 @@ process featureCounts_geneMult {
 
 // === Main Workflow
 workflow {
-
   /* Read, reference, and gff channels */
   readsflat_ch = channel.fromPath(params.reads, checkIfExists:true)
   reads_ch = channel.fromFilePairs(params.reads, checkIfExists:true)
-  cdna_ch = channel.fromPath(params.genome_cdna, checkIfExists:true)
-  genome_ch = channel.fromPath(params.genome, checkIfExists:true)
-  gff_ch = channel.fromPath(params.genome_gff, checkIfExists:true)
+
+  if(params.methods =~ /gsnap/) {
+    genome_ch = channel.fromPath(params.genome, checkIfExists:true)
+    gff_ch = channel.fromPath(params.genome_gff, checkIfExists:true)
+  }
+
+  if(params.methods =~ /kallisto/ || params.methods =~ /salmon/){
+    cdna_ch = channel.fromPath(params.genome_cdna, checkIfExists:true)
+  }
 
   /* 01_Quality-Control */
   readsflat_ch.collate(8) | fastqc | collect | multiqc
